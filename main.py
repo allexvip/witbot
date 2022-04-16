@@ -33,7 +33,7 @@ async def contact(message):
         global phonenumber
         phonenumber = str(message.contact.phone_number)
         user_id = str(message.contact.user_id)
-        await message.answer('Chat ID:{0}\n\nPhone: {1}'.format(user_id,phonenumber))
+        await message.answer('Chat ID: {0}\n\nPhone: {1}'.format(user_id,phonenumber))
 
 
 if __name__ == '__main__':
