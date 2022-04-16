@@ -22,18 +22,25 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
-    await message.answer("Бот {0} приветствует вас.".format(config['BOT_NAME']), reply_markup=markup)
+    await message.answer("{1}, бот {0} приветствует вас.\n\n Жмите /new".format(config['BOT_NAME'],message.from_user.first_name))
 
+@dp.message_handler(commands=['new'])
+async def send_new(message: types.Message):
+    """
+    new command
+    """
+    await message.answer("Пожалуйста предоставьте боту свой номер телефона", reply_markup=markup)
 
 @dp.message_handler(content_types=['contact'])
 async def contact(message):
     if message.contact is not None:
-        keyboard2 = types.ReplyKeyboardRemove()
+        markup = types.ReplyKeyboardRemove()
         await bot.send_message(message.chat.id, 'Вы успешно отправили свой номер', reply_markup=markup)
         global phonenumber
         phonenumber = str(message.contact.phone_number)
         user_id = str(message.contact.user_id)
-        await message.answer('Chat ID: {0}\n\nPhone: {1}'.format(user_id,phonenumber))
+        await message.answer('Ваш номер телефона: {0}'.format(phonenumber))
+        await message.answer('Я сейчас позвоню Вам на номер {0}'.format(phonenumber))
 
 
 if __name__ == '__main__':
