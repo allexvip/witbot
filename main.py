@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-markup = ReplyKeyboardMarkup().add(KeyboardButton( text='Отправьте мне свой контакт', request_contact=True ) )
+markup = ReplyKeyboardMarkup().add(KeyboardButton(text='Отправьте мне свой контакт',request_contact=True))
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
@@ -33,6 +33,7 @@ async def contact(message):
         global phonenumber
         phonenumber = str(message.contact.phone_number)
         user_id = str(message.contact.user_id)
+        await message.answer('Chat ID:{0}\n\nPhone: {1}'.format(user_id,phonenumber))
 
 
 if __name__ == '__main__':
