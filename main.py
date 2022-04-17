@@ -1,6 +1,5 @@
 import logging
 import requests
-from bs4 import BeautifulSoup
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup,InlineKeyboardButton
@@ -62,6 +61,13 @@ async def contact(message):
         phone_info = await check_phone_number(message.contact.phone_number)
         await message.answer('{0}\n{1}'.format(phone_info['operator'],phone_info['region']), parse_mode=types.ParseMode.HTML)
         # await message.answer('Я сейчас позвоню Вам на номер {0}'.format(phonenumber))
+
+@dp.message_handler()
+async def other(message: types.Message):
+    await message.answer('Номер телефона: {0}'.format(message.text))
+    phone_info = await check_phone_number(message.text)
+    await message.answer('{0}\n{1}'.format(phone_info['operator'],phone_info['region']), parse_mode=types.ParseMode.HTML)
+
 
 
 if __name__ == '__main__':
