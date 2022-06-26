@@ -1,8 +1,13 @@
 import logging
+import uuid
+import random
+import re
+import pytz
+from datetime import datetime
 import requests
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
-from aiogram.types import InlineKeyboardMarkup,InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import dotenv_values
 
 config = dotenv_values(".env")
@@ -16,20 +21,52 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-markup = ReplyKeyboardMarkup().add(KeyboardButton(text='Отправьте мне свой контакт', request_contact=True))
+# markups
+markup = ReplyKeyboardMarkup().add(KeyboardButton(text='Поделиться номером телефона', request_contact=True))
+markup_remove = types.ReplyKeyboardRemove()
 
+#debug mode
+DEBUG = True
 
-async def get_phone_info(phone):
-    r = requests.get('{0}?phone={1}&token={2}'.format(config['PHONE_CHECK_URL'], phone, config['PHONE_CHECK_TOKEN']))
-    return r
+tz = pytz.timezone('Europe/Moscow')
 
+async def get_random():
+    vals = []
+    for item in range(0, random.randint(4, 6)):
+        vals.append(random.randint(1, 5))
+    #print(vals)
+    res = [str(x) for x in vals]
+    s = '-'
+    s = s.join(res)
+    return s
 
-async def check_phone_number(phone):
+async def get_code():
+    vals = []
+    for item in range(0, 4):
+        vals.append(random.randint(1, 5))
+    #print(vals)
+    res = [str(x) for x in vals]
+    s = ''
+    s = s.join(res)
+    return s
+
+async def send_new_call(phone,numbers_str):
     result = {}
-    r = requests.get('https://zniis.ru/bdpn/check/?num={0}'.format(phone[2:]))
-    html = r.text
-    result['operator'] = html.split('Оператор: ')[1].split('<br>')[0]
-    result['region'] = html.split('Регион: ')[1].split('"')[0].split('<br>')[0]
+    json_response = None
+    result['status'] = False
+    result['message'] = numbers_str
+    try:
+        req_str = f"""{config['CALL_API_URL']}?phone={phone[1:]}&code={numbers_str}&client={phone[1:]}&unique={uuid.uuid4()}&voice=true&key={config['CALL_API_KEY']}&service_id={config['CALL_SERVICE_ID']}"""
+        response = requests.get(req_str)
+        json_response = response.json()
+        if DEBUG:
+            print(req_str)
+            print(json_response)
+        result['response'] = json_response
+        result['status'] = True
+        result['time_sent'] = str(datetime.now(tz)).split('.')[0]
+    except Exception as e:
+        print(e)
     return result
 
 
@@ -39,7 +76,8 @@ async def send_welcome(message: types.Message):
     This handler will be called when user sends `/start` or `/help` command
     """
     await message.answer(
-        "{1}, бот {0} приветствует вас.\n\n Жмите /new".format(config['BOT_NAME'], message.from_user.first_name))
+        "Приветствую {1}! \nЯ помогу записать видео и подписать его цифровой подписью.\n\n Жмите 👉 /new".format(
+            config['BOT_NAME'], message.from_user.first_name))
 
 
 @dp.message_handler(commands=['new'])
@@ -47,27 +85,25 @@ async def send_new(message: types.Message):
     """
     new command
     """
-    await message.answer("Пожалуйста предоставьте боту свой номер телефона", reply_markup=markup)
+    await message.answer("Мне нужен Ваш контактный номер", reply_markup=markup)
 
 
 @dp.message_handler(content_types=['contact'])
 async def contact(message):
     if message.contact is not None:
-        markup = types.ReplyKeyboardRemove()
-        await bot.send_message(message.chat.id, 'Вы успешно отправили свой номер', reply_markup=markup)
-        #res = await get_phone_info(message.contact.phone_number)
-        await message.answer('Ваш номер телефона: {0}'.format(message.contact.phone_number))
-        #await message.answer(res.text)
-        phone_info = await check_phone_number(message.contact.phone_number)
-        await message.answer('{0}\n{1}'.format(phone_info['operator'],phone_info['region']), parse_mode=types.ParseMode.HTML)
-        # await message.answer('Я сейчас позвоню Вам на номер {0}'.format(phonenumber))
+        numbers_str = await get_code()
+        answ_call = await send_new_call(message.contact.phone_number, numbers_str)
 
-@dp.message_handler()
-async def other(message: types.Message):
-    await message.answer('Номер телефона: {0}'.format(message.text))
-    phone_info = await check_phone_number(message.text)
-    await message.answer('{0}\n{1}'.format(phone_info['operator'],phone_info['region']), parse_mode=types.ParseMode.HTML)
-
+        if answ_call['status']:
+            msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок с кодом
+\n‼️Обязательно покажите цифры <b>{1}</b> пальцами вначале видео""".format(
+                message.contact.phone_number,
+                answ_call['message'],
+                answ_call['time_sent'],
+            )
+            await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
+        else:
+            await message.answer('Что-то пошло не так. Сервис временно не доступен', reply_markup=markup_remove)
 
 
 if __name__ == '__main__':
