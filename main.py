@@ -96,7 +96,7 @@ async def contact(message):
         answ_call = await send_new_call(message.contact.phone_number, numbers_str)
 
         if answ_call['status']:
-            msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок с кодом
+            msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок. 
 \n‼️Обязательно покажите цифры <b>{1}</b> пальцами вначале видео""".format(
                 message.contact.phone_number,
                 answ_call['message'],
