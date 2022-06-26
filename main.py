@@ -56,7 +56,7 @@ async def send_new_call(phone,numbers_str):
     result['status'] = False
     result['message'] = numbers_str
     try:
-        req_str = f"""{config['CALL_API_URL']}?phone={phone[1:]}&code={numbers_str}&client={phone[1:]}&unique={uuid.uuid4()}&voice=true&key={config['CALL_API_KEY']}&service_id={config['CALL_SERVICE_ID']}"""
+        req_str = f"""{config['CALL_API_URL']}?phone={phone}&code={numbers_str}&client={phone}&unique={uuid.uuid4()}&voice=true&key={config['CALL_API_KEY']}&service_id={config['CALL_SERVICE_ID']}"""
         response = requests.get(req_str)
         json_response = response.json()
         if DEBUG:
@@ -67,6 +67,7 @@ async def send_new_call(phone,numbers_str):
         result['time_sent'] = str(datetime.now(tz)).split('.')[0]
     except Exception as e:
         print(e)
+        result['error'] = str(e)
     return result
 
 
@@ -104,6 +105,7 @@ async def contact(message):
             await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
         else:
             await message.answer('Что-то пошло не так. Сервис временно не доступен', reply_markup=markup_remove)
+            await bot.send_message(config['ADMIN_CHATID'],answ_call['error'])
 
 
 if __name__ == '__main__':
