@@ -20,23 +20,23 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/allexvip/bot">
-    <img src="images/logo.png" alt="Logo" width="30%" >
+  <a href="https://github.com/allexvip/witbot">
+   <!-- <img src="images/logo.png" alt="Logo" width="30%" > -->
   </a>
 
-<h3 align="center">Telegram bot</h3>
+<h3 align="center">Telegram witbot</h3>
 
   <p align="center">
-    project_description
+    This bot can helps you for verify videofiles from your phone by telegram bot and make signature for your video.
     <br />
-    <a href="https://github.com/allexvip/bot"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/allexvip/witbot"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/allexvip/bot">View Demo</a>
+    <a href="https://github.com/allexvip/witbot">View Demo</a>
     ·
-    <a href="https://github.com/allexvip/bot/issues">Report Bug</a>
+    <a href="https://github.com/allexvip/witbot/issues">Report Bug</a>
     ·
-    <a href="https://github.com/allexvip/bot/issues">Request Feature</a>
+    <a href="https://github.com/allexvip/witbot/issues">Request Feature</a>
   </p>
 </div>
 
@@ -73,7 +73,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-(https://github.com/allexvip/bot)
+(https://github.com/allexvip/witbot)
 
 Here's a example of Telegram bot
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -116,7 +116,7 @@ Run the file:
 ```sh
    python main.py
    ```
-For more examples, please refer to the [Documentation](https://github.com/allexvip/bot)
+For more examples, please refer to the [Documentation](https://github.com/allexvip/witbot)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -130,7 +130,7 @@ For more examples, please refer to the [Documentation](https://github.com/allexv
 - [] Feature 3
     - [] Nested Feature
 
-See the [open issues](https://github.com/allexvip/bot/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/allexvip/witbot/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -166,7 +166,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [https://github.com/allexvip/bot](https://github.com/allexvip/bot)
+Project Link: [https://github.com/allexvip/witbot](https://github.com/allexvip/witbot)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -185,16 +185,16 @@ Project Link: [https://github.com/allexvip/bot](https://github.com/allexvip/bot)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/allexvip/bot.svg?style=for-the-badge
-[contributors-url]: https://github.com/allexvip/bot/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/allexvip/bot.svg?style=for-the-badge
-[forks-url]: https://github.com/allexvip/bot/network/members
-[stars-shield]: https://img.shields.io/github/stars/allexvip/bot.svg?style=for-the-badge
-[stars-url]: https://github.com/allexvip/bot/stargazers
-[issues-shield]: https://img.shields.io/github/issues/allexvip/bot.svg?style=for-the-badge
-[issues-url]: https://github.com/allexvip/bot/issues
-[license-shield]: https://img.shields.io/github/license/allexvip/bot.svg?style=for-the-badge
-[license-url]: https://github.com/allexvip/bot/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/allexvip/witbot.svg?style=for-the-badge
+[contributors-url]: https://github.com/allexvip/witbot/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/allexvip/witbot.svg?style=for-the-badge
+[forks-url]: https://github.com/allexvip/witbot/network/members
+[stars-shield]: https://img.shields.io/github/stars/allexvip/witbot.svg?style=for-the-badge
+[stars-url]: https://github.com/allexvip/witbot/stargazers
+[issues-shield]: https://img.shields.io/github/issues/allexvip/witbot.svg?style=for-the-badge
+[issues-url]: https://github.com/allexvip/witbot/issues
+[license-shield]: https://img.shields.io/github/license/allexvip/witbot.svg?style=for-the-badge
+[license-url]: https://github.com/allexvip/witbot/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/alexey-shestopalov-21636272/
 [product-screenshot]: images/screenshot.png
