@@ -10,7 +10,7 @@ from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButt
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import dotenv_values
 
-config = dotenv_values(".env")
+config = dotenv_values("config.env")
 
 API_TOKEN = config['BOT_API_KEY']
 
