@@ -25,32 +25,35 @@ dp = Dispatcher(bot)
 markup = ReplyKeyboardMarkup().add(KeyboardButton(text='Поделиться номером телефона', request_contact=True))
 markup_remove = types.ReplyKeyboardRemove()
 
-#debug mode
+# debug mode
 DEBUG = True
 
 tz = pytz.timezone('Europe/Moscow')
+
 
 async def get_random():
     vals = []
     for item in range(0, random.randint(4, 6)):
         vals.append(random.randint(1, 5))
-    #print(vals)
+    # print(vals)
     res = [str(x) for x in vals]
     s = '-'
     s = s.join(res)
     return s
 
+
 async def get_code():
     vals = []
     for item in range(0, 4):
         vals.append(random.randint(1, 5))
-    #print(vals)
+    # print(vals)
     res = [str(x) for x in vals]
     s = ''
     s = s.join(res)
     return s
 
-async def send_new_call(phone,numbers_str):
+
+async def send_new_call(phone, numbers_str):
     result = {}
     json_response = None
     result['status'] = False
@@ -110,7 +113,7 @@ async def contact(message):
             await bot.send_message(service_chatid, f"🟢 Info {message.contact.phone_number}:\n\n{str(answ_call)}")
         else:
             await message.answer('Что-то пошло не так. Сервис временно не доступен', reply_markup=markup_remove)
-            await bot.send_message(service_chatid,f"⭕️Error {message.contact.phone_number}:\n\n{answ_call['error']}")
+            await bot.send_message(service_chatid, f"⭕️Error {message.contact.phone_number}:\n\n{answ_call['error']}")
 
 
 if __name__ == '__main__':
