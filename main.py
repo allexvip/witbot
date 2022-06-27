@@ -92,6 +92,10 @@ async def send_new(message: types.Message):
 @dp.message_handler(content_types=['contact'])
 async def contact(message):
     if message.contact is not None:
+        if config['ADMIN_SERVICE_GROUP']:
+            service_chatid = config['ADMIN_SERVICE_GROUP']
+        else:
+            service_chatid = config['ADMIN_CHATID']
         numbers_str = await get_code()
         answ_call = await send_new_call(message.contact.phone_number, numbers_str)
 
@@ -103,9 +107,10 @@ async def contact(message):
                 answ_call['time_sent'],
             )
             await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
+            await bot.send_message(service_chatid, f"🟢 Info {message.contact.phone_number}:\n\n{str(answ_call)}")
         else:
             await message.answer('Что-то пошло не так. Сервис временно не доступен', reply_markup=markup_remove)
-            await bot.send_message(config['ADMIN_CHATID'],answ_call['error'])
+            await bot.send_message(service_chatid,f"⭕️Error {message.contact.phone_number}:\n\n{answ_call['error']}")
 
 
 if __name__ == '__main__':
