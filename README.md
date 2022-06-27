@@ -99,7 +99,7 @@ To get a local copy up and running follow these simple example steps.
 ### Installation
 
 1. Get Telegram Bot API Key from [https://t.me/botfather](https://example.com)
-2. Create your project folder ```mkdir bot```
+2. Create and enter to project folder ```mkdir bot; cd bot```
 3. Clone repository from GIT:
 `git clone https://github.com/allexvip/witbot.git`
 4. Run `pip install -r requirements.txt`
