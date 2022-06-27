@@ -55,6 +55,7 @@ async def get_code():
 
 async def send_new_call(phone, numbers_str):
     result = {}
+    phone = phone.replace('+','')
     json_response = None
     result['status'] = False
     result['message'] = numbers_str
