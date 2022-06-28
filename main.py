@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 import random
 import re
@@ -9,6 +10,8 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import dotenv_values
+import json
+from requests.auth import AuthBase
 
 config = dotenv_values("config.env")
 
@@ -53,9 +56,43 @@ async def get_code():
     return s
 
 
+async def send_call(phone, numbers_str):
+    result = {}
+    phone = phone.replace('+', '')
+    json_response = None
+    result['status'] = False
+    result['message'] = numbers_str
+    try:
+        url = config["CALL_API_URL"]
+
+        payload = json.dumps([{
+            "channelType": "FLASHCALL",
+            "senderName": "any sender",
+            "destination": phone,
+            "content": numbers_str,
+        }])
+        headers = {
+            'Authorization': f'Basic {config["CALL_API_KEY"]}',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+        json_response = response.json()
+        print(response.status_code)
+        if DEBUG:
+            print(json_response)
+        result['response'] = json_response
+        result['status'] = True
+        result['time_sent'] = str(datetime.now(tz)).split('.')[0]
+    except Exception as e:
+        print(e)
+        result['error'] = str(e)
+    return result
+
+
 async def send_new_call(phone, numbers_str):
     result = {}
-    phone = phone.replace('+','')
+    phone = phone.replace('+', '')
     json_response = None
     result['status'] = False
     result['message'] = numbers_str
@@ -101,7 +138,7 @@ async def contact(message):
         else:
             service_chatid = config['ADMIN_CHATID']
         numbers_str = await get_code()
-        answ_call = await send_new_call(message.contact.phone_number, numbers_str)
+        answ_call = await send_call(message.contact.phone_number, numbers_str)
 
         if answ_call['status']:
             msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок. 

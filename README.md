@@ -103,7 +103,7 @@ To get a local copy up and running follow these simple example steps.
 3. Clone repository from GIT:
 `git clone https://github.com/allexvip/witbot.git`
 4. Run `pip install -r requirements.txt`
-5. Rename file `.env_example` to `.env` and write your settings there.
+5. Rename file `config.env_example` to `config.env` and write your settings there.
 6. Run `python main.py`
 
 <p align="right">(<a href="#top">back to top</a>)</p>
