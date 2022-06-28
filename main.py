@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 import os
 import uuid
 import random
@@ -39,6 +40,32 @@ if config['ADMIN_SERVICE_GROUP']:
 else:
     service_chatid = config['ADMIN_CHATID']
 
+sql_init = False
+
+if not os.path.exists('svidetel.db'):
+    sql_init = True
+conn = sqlite3.connect('svidetel.db')
+cur = conn.cursor()
+
+if sql_init:
+    with open("migrations/initial_migration.sql", "r") as file:
+        mass = file.read()
+        for sql_item in mass.split(';'):
+            if len(sql_item) > 5:
+                cur.execute(sql_item)
+                conn.commit()
+
+
+async def send_to_db(sql):
+    cur.execute(sql)
+    conn.commit()
+
+
+async def log_db_add(chatid, msg):
+    await send_to_db(
+        f"""INSERT INTO log (`chatid`, `message`,`created`) VALUES('{chatid}', '{msg}',datetime('now'));""")
+
+
 async def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec_end):
     result = {}
     result['status'] = False
@@ -57,7 +84,6 @@ async def check_video(chatid, local_video_in_file_path, local_video_out_file_pat
     except Exception as e:
         result['error'] = f'{chatid} \n{local_video_in_file_path}\n\n{str(e)}'
     return result
-
 
 
 async def get_random():
@@ -143,9 +169,35 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
+    await log_db_add(message.from_user.id, message.text)
+    await send_to_db(f"""INSERT OR IGNORE INTO USER (`chatid`,`username`,`first_name`,`last_name`,`created`,`upd`) 
+        VALUES ('{message.from_user.id}',
+        '{message.from_user.username}',
+        '{message.from_user.first_name}',
+        '{message.from_user.last_name}',
+        datetime('now'),datetime('now'));""")
+
+    # upd user info
+    await send_to_db(f"""UPDATE USER SET 
+        `username` = '{message.from_user.username}',
+        `first_name` = '{message.from_user.first_name}',
+        `last_name` = '{message.from_user.last_name}',
+        `upd` = datetime('now') 
+        where `chatid`={message.from_user.id}
+    """)
+
     await message.answer(
         "Приветствую {1}! \nЯ помогу записать видео и подписать его цифровой подписью.\n\n Жмите 👉 /new".format(
             config['BOT_NAME'], message.from_user.first_name))
+
+
+@dp.message_handler(commands=['help'])
+async def send_help(message: types.Message):
+    """
+    This handler will be called when user sends `/help` command
+    """
+    await log_db_add(message.from_user.id, message.text)
+    await message.answer("Я помогу записать видео и подписать его цифровой подписью.\n\n Жмите 👉 /new")
 
 
 @dp.message_handler(commands=['new'])
@@ -153,6 +205,7 @@ async def send_new(message: types.Message):
     """
     new command
     """
+    await log_db_add(message.from_user.id, message.text)
     await message.answer("Мне нужен Ваш контактный номер", reply_markup=markup)
 
 
@@ -160,6 +213,7 @@ async def send_new(message: types.Message):
 async def contact(message):
     if message.contact is not None:
         numbers_str = await get_code()
+
         answ_call = await send_call(message.contact.phone_number, numbers_str)
 
         if answ_call['status']:
@@ -169,11 +223,23 @@ async def contact(message):
                 answ_call['message'],
                 answ_call['time_sent'],
             )
+            await send_to_db(f"""UPDATE USER SET 
+                    `phone` = '{message.contact.phone_number}',
+                    `username` = '{message.from_user.username}',
+                    `first_name` = '{message.from_user.first_name}',
+                    `last_name` = '{message.from_user.last_name}',
+                    `upd` = datetime('now') 
+                    where `chatid`={message.from_user.id}
+                """)
+
             await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
             await bot.send_message(service_chatid, f"🟢 Info {message.contact.phone_number}:\n\n{str(answ_call)}")
         else:
-            await message.answer('Что-то пошло не так. Сервис временно не доступен', reply_markup=markup_remove)
+            msg_str = 'Что-то пошло не так. Сервис временно не доступен'
+            await message.answer(msg_str, reply_markup=markup_remove)
             await bot.send_message(service_chatid, f"⭕️Error {message.contact.phone_number}:\n\n{answ_call['error']}")
+
+        await log_db_add(message.from_user.id, f'Принят контакт пользователя {message.contact.phone_number} {msg_str}')
 
 
 @dp.message_handler(content_types=["video"])
@@ -187,12 +253,14 @@ async def download_video(message: types.Message):
     local_video_out_file_path = f"video/{message.from_user.id}_{unique_index}_out.mp4"
     await bot.download_file(telegram_file_path, local_video_in_file_path)
     video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
-                     config['VIDEO_DURATION_CHECK'])
+                                   config['VIDEO_DURATION_CHECK'])
     if video_info['status']:
+        await log_db_add(message.from_user.id, f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
         await message.answer(f"Видео на {video_info['duration']} сек")
         await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
     else:
-        await bot.send_message(service_chatid,video_info['error'])
+        await bot.send_message(service_chatid, video_info['error'])
+        await log_db_add(message.from_user.id,f'Ошибка анализа видео от пользователя {video_info["error"]}')
 
 
 if __name__ == '__main__':
