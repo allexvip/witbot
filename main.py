@@ -11,7 +11,8 @@ from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButt
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import dotenv_values
 import json
-from requests.auth import AuthBase
+import time
+from moviepy.editor import *
 
 config = dotenv_values("config.env")
 
@@ -32,6 +33,31 @@ markup_remove = types.ReplyKeyboardRemove()
 DEBUG = True
 
 tz = pytz.timezone('Europe/Moscow')
+
+if config['ADMIN_SERVICE_GROUP']:
+    service_chatid = config['ADMIN_SERVICE_GROUP']
+else:
+    service_chatid = config['ADMIN_CHATID']
+
+async def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec_end):
+    result = {}
+    result['status'] = False
+    result['duration'] = 0
+    try:
+        video = VideoFileClip(local_video_in_file_path)
+        result['duration'] = float(video.duration)
+        sec_end = float(sec_end)
+        if result['duration'] > sec_end:
+            video = video.subclip(0, sec_end)
+        else:
+            video = video.subclip(0, result['duration'])
+        result_video = CompositeVideoClip([video])
+        result_video.write_videofile(local_video_out_file_path)
+        result['status'] = True
+    except Exception as e:
+        result['error'] = f'{chatid} \n{local_video_in_file_path}\n\n{str(e)}'
+    return result
+
 
 
 async def get_random():
@@ -133,10 +159,6 @@ async def send_new(message: types.Message):
 @dp.message_handler(content_types=['contact'])
 async def contact(message):
     if message.contact is not None:
-        if config['ADMIN_SERVICE_GROUP']:
-            service_chatid = config['ADMIN_SERVICE_GROUP']
-        else:
-            service_chatid = config['ADMIN_CHATID']
         numbers_str = await get_code()
         answ_call = await send_call(message.contact.phone_number, numbers_str)
 
@@ -152,6 +174,25 @@ async def contact(message):
         else:
             await message.answer('Что-то пошло не так. Сервис временно не доступен', reply_markup=markup_remove)
             await bot.send_message(service_chatid, f"⭕️Error {message.contact.phone_number}:\n\n{answ_call['error']}")
+
+
+@dp.message_handler(content_types=["video"])
+async def download_video(message: types.Message):
+    file_id = message.video.file_id  # Get file id
+    file = await bot.get_file(file_id)  # Get file path
+    print(file)
+    unique_index = uuid.uuid4()
+    telegram_file_path = file.file_path
+    local_video_in_file_path = f"video/{message.from_user.id}_{unique_index}.mp4"
+    local_video_out_file_path = f"video/{message.from_user.id}_{unique_index}_out.mp4"
+    await bot.download_file(telegram_file_path, local_video_in_file_path)
+    video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
+                     config['VIDEO_DURATION_CHECK'])
+    if video_info['status']:
+        await message.answer(f"Видео на {video_info['duration']} сек")
+        await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
+    else:
+        await bot.send_message(service_chatid,video_info['error'])
 
 
 if __name__ == '__main__':
