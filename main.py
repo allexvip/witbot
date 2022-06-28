@@ -66,6 +66,34 @@ async def log_db_add(chatid, msg):
         f"""INSERT INTO log (`chatid`, `message`,`created`) VALUES('{chatid}', '{msg}',datetime('now'));""")
 
 
+async def get_data(sql):
+    result = {}
+    result['status'] = False
+    try:
+        cur.execute(sql)
+        conn.commit()
+        result['status'] = True
+    except Exception as e:
+        logging.info('SQL exception get_data(): ' + str(e))
+    result['data'] = cur.fetchall()
+    return result
+
+
+async def phone_exists_check(chatid):
+    result = {}
+    result['status'] = False
+    sql = f"""select count(*) from user where chatid = {chatid} and `phone` is not null; """
+    try:
+        cur.execute(sql)
+        conn.commit()
+        result['status'] = True
+    except Exception as e:
+        logging.info('SQL exception get_data(): ' + str(e))
+
+    result['data'] = cur.fetchall()
+    return result
+
+
 async def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec_end):
     result = {}
     result['status'] = False
@@ -110,7 +138,6 @@ async def get_code():
 
 async def send_call(phone, numbers_str):
     result = {}
-    phone = phone.replace('+', '')
     json_response = None
     result['status'] = False
     result['message'] = numbers_str
@@ -144,7 +171,6 @@ async def send_call(phone, numbers_str):
 
 async def send_new_call(phone, numbers_str):
     result = {}
-    phone = phone.replace('+', '')
     json_response = None
     result['status'] = False
     result['message'] = numbers_str
@@ -164,7 +190,33 @@ async def send_new_call(phone, numbers_str):
     return result
 
 
-@dp.message_handler(commands=['start', 'help'])
+async def make_call(message):
+    numbers_str = await get_code()
+    sql = f"""select phone from user where chatid={message.from_user.id}; """
+    phone_number =  dict(await get_data(sql))['data'][0][0]
+    print(phone_number)
+
+    answ_call = await send_call(phone_number, numbers_str)
+
+    if answ_call['status']:
+        msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок. 
+    \n‼️Обязательно покажите цифры <b>{1}</b> пальцами вначале видео""".format(
+            phone_number,
+            answ_call['message'],
+            answ_call['time_sent'],
+        )
+
+        await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
+        await bot.send_message(service_chatid, f"🟢 Info {phone_number}:\n\n{str(answ_call)}")
+    else:
+        msg_str = 'Что-то пошло не так. Сервис временно не доступен'
+        await message.answer(msg_str, reply_markup=markup_remove)
+        await bot.send_message(service_chatid, f"⭕️Error {phone_number}:\n\n{answ_call['error']}")
+    await log_db_add(message.from_user.id, f'{msg_str}')
+
+
+
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
@@ -206,40 +258,27 @@ async def send_new(message: types.Message):
     new command
     """
     await log_db_add(message.from_user.id, message.text)
-    await message.answer("Мне нужен Ваш контактный номер", reply_markup=markup)
+
+    if dict(await phone_exists_check(message.from_user.id))['data'][0][0] == 1:
+        await make_call(message)
+    else:
+        await message.answer("Мне нужен Ваш контактный номер", reply_markup=markup)
 
 
 @dp.message_handler(content_types=['contact'])
 async def contact(message):
     if message.contact is not None:
-        numbers_str = await get_code()
 
-        answ_call = await send_call(message.contact.phone_number, numbers_str)
-
-        if answ_call['status']:
-            msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок. 
-\n‼️Обязательно покажите цифры <b>{1}</b> пальцами вначале видео""".format(
-                message.contact.phone_number,
-                answ_call['message'],
-                answ_call['time_sent'],
-            )
-            await send_to_db(f"""UPDATE USER SET 
-                    `phone` = '{message.contact.phone_number}',
-                    `username` = '{message.from_user.username}',
-                    `first_name` = '{message.from_user.first_name}',
-                    `last_name` = '{message.from_user.last_name}',
-                    `upd` = datetime('now') 
-                    where `chatid`={message.from_user.id}
-                """)
-
-            await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
-            await bot.send_message(service_chatid, f"🟢 Info {message.contact.phone_number}:\n\n{str(answ_call)}")
-        else:
-            msg_str = 'Что-то пошло не так. Сервис временно не доступен'
-            await message.answer(msg_str, reply_markup=markup_remove)
-            await bot.send_message(service_chatid, f"⭕️Error {message.contact.phone_number}:\n\n{answ_call['error']}")
-
-        await log_db_add(message.from_user.id, f'Принят контакт пользователя {message.contact.phone_number} {msg_str}')
+        await send_to_db(f"""UPDATE USER SET 
+                               `phone` = '{message.contact.phone_number}',
+                               `username` = '{message.from_user.username}',
+                               `first_name` = '{message.from_user.first_name}',
+                               `last_name` = '{message.from_user.last_name}',
+                               `upd` = datetime('now') 
+                               where `chatid`={message.from_user.id}
+                           """)
+        await log_db_add(message.from_user.id, f'Принят контакт пользователя {message.contact.phone_number}')
+        await make_call(message)
 
 
 @dp.message_handler(content_types=["video"])
@@ -255,12 +294,13 @@ async def download_video(message: types.Message):
     video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
                                    config['VIDEO_DURATION_CHECK'])
     if video_info['status']:
-        await log_db_add(message.from_user.id, f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
+        await log_db_add(message.from_user.id,
+                         f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
         await message.answer(f"Видео на {video_info['duration']} сек")
         await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
     else:
         await bot.send_message(service_chatid, video_info['error'])
-        await log_db_add(message.from_user.id,f'Ошибка анализа видео от пользователя {video_info["error"]}')
+        await log_db_add(message.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
 
 
 if __name__ == '__main__':
