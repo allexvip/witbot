@@ -35,10 +35,10 @@ DEBUG = True
 
 tz = pytz.timezone('Europe/Moscow')
 
-if config['ADMIN_SERVICE_GROUP']:
-    service_chatid = config['ADMIN_SERVICE_GROUP']
+if config['BOT_ADMIN_SERVICE_GROUP']:
+    service_chatid = config['BOT_ADMIN_SERVICE_GROUP']
 else:
-    service_chatid = config['ADMIN_CHATID']
+    service_chatid = config['BOT_ADMIN_CHATID']
 
 sql_init = False
 
@@ -193,14 +193,15 @@ async def send_new_call(phone, numbers_str):
 async def make_call(message):
     numbers_str = await get_code()
     sql = f"""select phone from user where chatid={message.from_user.id}; """
-    phone_number =  dict(await get_data(sql))['data'][0][0]
+    phone_number = dict(await get_data(sql))['data'][0][0]
     print(phone_number)
 
     answ_call = await send_call(phone_number, numbers_str)
 
     if answ_call['status']:
         msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок. 
-    \n‼️Обязательно покажите цифры <b>{1}</b> пальцами вначале видео""".format(
+    \n‼️Обязательно <i>скажите и покажите цифры</i> <b>{1}</b> пальцами вначале видео. 
+    \n\nИз-за ограничений на размер видео для ботов - присылайте ваше видео пользователю @ruvips""".format(
             phone_number,
             answ_call['message'],
             answ_call['time_sent'],
@@ -213,7 +214,6 @@ async def make_call(message):
         await message.answer(msg_str, reply_markup=markup_remove)
         await bot.send_message(service_chatid, f"⭕️Error {phone_number}:\n\n{answ_call['error']}")
     await log_db_add(message.from_user.id, f'{msg_str}')
-
 
 
 @dp.message_handler(commands=['start'])
@@ -268,7 +268,6 @@ async def send_new(message: types.Message):
 @dp.message_handler(content_types=['contact'])
 async def contact(message):
     if message.contact is not None:
-
         await send_to_db(f"""UPDATE USER SET 
                                `phone` = '{message.contact.phone_number}',
                                `username` = '{message.from_user.username}',
@@ -281,26 +280,34 @@ async def contact(message):
         await make_call(message)
 
 
+@dp.message_handler(commands=['id'])
+async def show_chat_id(message: types.Message):
+    await message.answer(f'Ваш chatid: {message.from_user.id}')
+
+
 @dp.message_handler(content_types=["video"])
 async def download_video(message: types.Message):
-    file_id = message.video.file_id  # Get file id
-    file = await bot.get_file(file_id)  # Get file path
-    print(file)
-    unique_index = uuid.uuid4()
-    telegram_file_path = file.file_path
-    local_video_in_file_path = f"video/{message.from_user.id}_{unique_index}.mp4"
-    local_video_out_file_path = f"video/{message.from_user.id}_{unique_index}_out.mp4"
-    await bot.download_file(telegram_file_path, local_video_in_file_path)
-    video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
-                                   config['VIDEO_DURATION_CHECK'])
-    if video_info['status']:
-        await log_db_add(message.from_user.id,
-                         f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
-        await message.answer(f"Видео на {video_info['duration']} сек")
-        await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
-    else:
-        await bot.send_message(service_chatid, video_info['error'])
-        await log_db_add(message.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
+    # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
+    await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
+    await message.answer('Файл получен и обрабатывается.')
+    # file_id = message.video.file_id  # Get file id
+    # file = await bot.get_file(file_id)  # Get file path
+    # print(file)
+    # unique_index = uuid.uuid4()
+    # telegram_file_path = file.file_path
+    # local_video_in_file_path = f"video/{message.from_user.id}_{unique_index}.mp4"
+    # local_video_out_file_path = f"video/{message.from_user.id}_{unique_index}_out.mp4"
+    # await bot.download_file(telegram_file_path, local_video_in_file_path)
+    # video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
+    #                                config['VIDEO_DURATION_CHECK'])
+    # if video_info['status']:
+    #     await log_db_add(message.from_user.id,
+    #                      f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
+    #     await message.answer(f"Видео на {video_info['duration']} сек")
+    #     await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
+    # else:
+    #     await bot.send_message(service_chatid, video_info['error'])
+    #     await log_db_add(log_db_addmessage.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
 
 
 if __name__ == '__main__':
