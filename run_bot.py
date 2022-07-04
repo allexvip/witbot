@@ -289,9 +289,6 @@ async def show_chat_id(message: types.Message):
 
 @dp.message_handler(content_types=["video"])
 async def download_video(message: types.Message):
-
-
-
     # Printing download progress
     def download_callback(current, total):
         print('Downloaded', current, 'out of', total,
@@ -317,16 +314,24 @@ async def download_video(message: types.Message):
                                                                            progress_callback=download_callback)
                     print(local_video_in_file_path)
                     local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
-                    video_info = check_video(client_message.message, local_video_in_file_path, local_video_out_file_path,
-                                                   60)
+                    video_info = check_video(client_message.message, local_video_in_file_path,
+                                             local_video_out_file_path,
+                                             60)
                     print(video_info)
+                    await message.answer('Файл получен и обрабатывается.')
+                    if video_info['status']:
+                        await bot.send_video(message.from_user.id,
+                                             caption=f"Данный видеофайл подписан цифровой подписью (продолжительность: {video_info['duration']} сек.",
+                                             video=message.video.file_id)
+
             except Exception as e:
                 pass
             finally:
                 client_working_status = False
+
         # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
         await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
-        await message.answer('Файл получен и обрабатывается.')
+
         if client_working_status:
             await client.run_until_disconnected()
 
