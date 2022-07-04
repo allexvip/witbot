@@ -10,6 +10,8 @@ import requests
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telethon.sync import TelegramClient, events
+from telethon.tl.types import InputMessagesFilterVideo
 from dotenv import dotenv_values
 import json
 import time
@@ -94,20 +96,20 @@ async def phone_exists_check(chatid):
     return result
 
 
-async def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec_end):
+def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec_end):
     result = {}
     result['status'] = False
     result['duration'] = 0
     try:
         video = VideoFileClip(local_video_in_file_path)
         result['duration'] = float(video.duration)
-        sec_end = float(sec_end)
-        if result['duration'] > sec_end:
-            video = video.subclip(0, sec_end)
-        else:
-            video = video.subclip(0, result['duration'])
-        result_video = CompositeVideoClip([video])
-        result_video.write_videofile(local_video_out_file_path)
+        # sec_end = float(sec_end)
+        # if result['duration'] > sec_end:
+        #     video = video.subclip(0, sec_end)
+        # else:
+        #     video = video.subclip(0, result['duration'])
+        # result_video = CompositeVideoClip([video])
+        # result_video.write_videofile(local_video_out_file_path)
         result['status'] = True
     except Exception as e:
         result['error'] = f'{chatid} \n{local_video_in_file_path}\n\n{str(e)}'
@@ -287,9 +289,47 @@ async def show_chat_id(message: types.Message):
 
 @dp.message_handler(content_types=["video"])
 async def download_video(message: types.Message):
-    # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
-    await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
-    await message.answer('Файл получен и обрабатывается.')
+
+
+
+    # Printing download progress
+    def download_callback(current, total):
+        print('Downloaded', current, 'out of', total,
+              'bytes: {:.2%}'.format(current / total))
+
+    # Присваиваем значения внутренним переменным
+    client_working_status = True
+    api_id = config['CLIENT_API_ID']
+    api_hash = config['CLIENT_API_HASH']
+    username = config['CLIENT_USERNAME']
+    async with TelegramClient('name', api_id, api_hash) as client:
+        @client.on(events.NewMessage())
+        async def handler(event):
+            client_message = event.message
+            print(event)
+            print(client_message)
+            print(client_message.media)
+            media_file_datetime_str = str(client_message.date).replace('+00:00', '').replace(':', '_').replace(' ', '_')
+            file_path = f"video/{client_message.message}_{media_file_datetime_str}"
+            try:
+                if client_message.media != 'None':
+                    local_video_in_file_path = await client.download_media(client_message, file=file_path,
+                                                                           progress_callback=download_callback)
+                    print(local_video_in_file_path)
+                    local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
+                    video_info = check_video(client_message.message, local_video_in_file_path, local_video_out_file_path,
+                                                   60)
+                    print(video_info)
+            except Exception as e:
+                pass
+            finally:
+                client_working_status = False
+        # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
+        await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
+        await message.answer('Файл получен и обрабатывается.')
+        if client_working_status:
+            await client.run_until_disconnected()
+
     # file_id = message.video.file_id  # Get file id
     # file = await bot.get_file(file_id)  # Get file path
     # print(file)

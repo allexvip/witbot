@@ -17,10 +17,7 @@ api_hash = config['CLIENT_API_HASH']
 username = config['CLIENT_USERNAME']
 
 
-# Printing download progress
-def callback(current, total):
-    print('Downloaded', current, 'out of', total,
-          'bytes: {:.2%}'.format(current / total))
+
 
 
 async def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec_end):
