@@ -10,6 +10,7 @@ import requests
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.dispatcher.filters import Text
 from telethon.sync import TelegramClient, events
 from telethon.tl.types import InputMessagesFilterVideo
 from dotenv import dotenv_values
@@ -291,71 +292,73 @@ async def show_chat_id(message: types.Message):
 
 @dp.message_handler(content_types=["video"])
 async def download_video(message: types.Message):
-    if message.from_user.id == config['BOT_CHATID']:
-        # Printing download progress
-        def download_callback(current, total):
-            print('Downloaded', current, 'out of', total,
-                  'bytes: {:.2%}'.format(current / total))
+    # Printing download progress
+    async def download_callback(current, total):
+        await user_message.edit_text(text='Обработка видеофайла: {:.0%}'.format(current / total))
+        # print('Downloaded', current, 'out of', total,
+        #       'bytes: {:.2%}'.format(current / total))
 
-        # Присваиваем значения внутренним переменным
-        client_working_status = True
-        api_id = config['CLIENT_API_ID']
-        api_hash = config['CLIENT_API_HASH']
-        username = config['CLIENT_USERNAME']
-        async with TelegramClient('name', api_id, api_hash) as client:
-            @client.on(events.NewMessage())
-            async def handler(event):
-                client_message = event.message
-                print(event)
-                print(client_message)
-                print(client_message.media)
-                media_file_datetime_str = str(client_message.date).replace('+00:00', '').replace(':', '_').replace(' ', '_')
-                file_path = f"video/{client_message.message}_{media_file_datetime_str}"
-                try:
-                    if client_message.media != 'None':
-                        local_video_in_file_path = await client.download_media(client_message, file=file_path,
-                                                                               progress_callback=download_callback)
-                        print(local_video_in_file_path)
-                        local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
-                        video_info = check_video(client_message.message, local_video_in_file_path,
-                                                 local_video_out_file_path,
-                                                 60)
-                        print(video_info)
-                        print(await message.answer('Видеофайл получен и обрабатывается.'))
-                        if video_info['status']:
-                            await bot.send_video(message.from_user.id,
-                                                 caption=f"Данный видеофайл подписан цифровой подписью (продолжительность: {video_info['duration']}) сек.",
-                                                 video=message.video.file_id)
+    # Присваиваем значения внутренним переменным
+    client_working_status = True
+    api_id = config['CLIENT_API_ID']
+    api_hash = config['CLIENT_API_HASH']
+    username = config['CLIENT_USERNAME']
+    async with TelegramClient('name', api_id, api_hash) as client:
+        @client.on(events.NewMessage(int(config['BOT_CHATID'])))
+        async def handler(event):
+            client_message = event.message
+            # print(event)
+            # print(client_message)
+            # print(client_message.media)
+            media_file_datetime_str = str(client_message.date).replace('+00:00', '').replace(':', '_').replace(' ', '_')
+            file_path = f"video/{client_message.message}_{media_file_datetime_str}"
+            try:
+                if client_message.media != 'None':
+                    local_video_in_file_path = await client.download_media(client_message, file=file_path,
+                                                                           progress_callback=download_callback)
 
-                except Exception as e:
-                    pass
-                finally:
-                    client_working_status = False
+                    # print(local_video_in_file_path)
+                    local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
+                    video_info = check_video(client_message.message, local_video_in_file_path,
+                                             local_video_out_file_path,
+                                             60)
+                    # print(video_info)
+                    if video_info['status']:
+                        await user_message.edit_text(text='Готово!')
+                        await bot.send_video(message.from_user.id,
+                                             caption=f"Данный видеофайл подписан цифровой подписью (продолжительность: {video_info['duration']}) сек.",
+                                             video=message.video.file_id)
 
-            # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
-            await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
-            await message.answer('Получаю видеофайл. Это может занять продолжительное время. Я напишу.')
-            if client_working_status:
-                await client.run_until_disconnected()
+            except Exception as e:
+                pass
+            finally:
+                client_working_status = False
 
-        # file_id = message.video.file_id  # Get file id
-        # file = await bot.get_file(file_id)  # Get file path
-        # print(file)
-        # unique_index = uuid.uuid4()
-        # telegram_file_path = file.file_path
-        # local_video_in_file_path = f"video/{message.from_user.id}_{unique_index}.mp4"
-        # local_video_out_file_path = f"video/{message.from_user.id}_{unique_index}_out.mp4"
-        # await bot.download_file(telegram_file_path, local_video_in_file_path)
-        # video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
-        #                                config['VIDEO_DURATION_CHECK'])
-        # if video_info['status']:
-        #     await log_db_add(message.from_user.id,
-        #                      f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
-        #     await message.answer(f"Видео на {video_info['duration']} сек")
-        #     await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
-        # else:
-        #     await bot.send_message(service_chatid, video_info['error'])
-        #     await log_db_add(log_db_addmessage.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
+        # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
+        await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
+        user_message = await message.answer(
+            'Обработка видеофайла. Это может занять продолжительное время. Я напишу, как будет готово.')
+        if client_working_status:
+            await client.run_until_disconnected()
+
+    # file_id = message.video.file_id  # Get file id
+    # file = await bot.get_file(file_id)  # Get file path
+    # print(file)
+    # unique_index = uuid.uuid4()
+    # telegram_file_path = file.file_path
+    # local_video_in_file_path = f"video/{message.from_user.id}_{unique_index}.mp4"
+    # local_video_out_file_path = f"video/{message.from_user.id}_{unique_index}_out.mp4"
+    # await bot.download_file(telegram_file_path, local_video_in_file_path)
+    # video_info = await check_video(message.from_user.id, local_video_in_file_path, local_video_out_file_path,
+    #                                config['VIDEO_DURATION_CHECK'])
+    # if video_info['status']:
+    #     await log_db_add(message.from_user.id,
+    #                      f'Принято видео от пользователя продолжительностью {video_info["duration"]} сек.')
+    #     await message.answer(f"Видео на {video_info['duration']} сек")
+    #     await bot.send_video(message.from_user.id, open(local_video_out_file_path, 'rb'))
+    # else:
+    #     await bot.send_message(service_chatid, video_info['error'])
+    #     await log_db_add(log_db_addmessage.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
 
 
 if __name__ == '__main__':
