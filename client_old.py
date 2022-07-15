@@ -3,8 +3,7 @@ import logging
 from telethon.sync import TelegramClient, events
 from telethon.tl.types import InputMessagesFilterVideo
 from moviepy.editor import *
-import asyncio
-import datetime
+
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
                     level=logging.WARNING)
 
@@ -40,35 +39,21 @@ async def check_video(chatid, local_video_in_file_path, local_video_out_file_pat
 
 
 with TelegramClient('name', api_id, api_hash) as client:
-    @client.on(events.NewMessage(int(config['BOT_CHATID'])))
+    @client.on(events.NewMessage())
     async def handler(event):
-        #if event.video:
         message = event.message
-        bot_user_info = eval(message.message)
-        bot_user_info['text'] = ''
-        async def download_callback(current, total):
-            await asyncio.sleep(int(config['CLIENT_PROCESSING_NOTIFY_PERIOD_SEC']))
-            procent_val = round(100*current / total,1)
-            bot_user_info['text'] = f'Обработка видеофайла. {procent_val}%'
-            await client.send_message(int(config['BOT_CHATID']),str(bot_user_info))
-
-
+        print(event)
+        print(message)
+        print(message.media)
         media_file_datetime_str = str(message.date).replace('+00:00', '').replace(':', '_').replace(' ', '_')
-        file_path = f"video/{bot_user_info['chatid']}_{media_file_datetime_str}"
+        file_path = f"video/{message.message}_{media_file_datetime_str}"
         try:
             if message.media != 'None':
                 local_video_in_file_path = await client.download_media(message, file=file_path,
-                                                                       progress_callback=download_callback)
+                                                                       progress_callback=callback)
                 print(local_video_in_file_path)
                 local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
-                start_time = datetime.now()
-                video_info = await check_video(bot_user_info['chatid'], local_video_in_file_path, local_video_out_file_path,
-                                               60)
-                if video_info['status']:
-                    bot_user_info['text'] = f'Готово! Обработано за {(datetime.now() - start_time)} сек.'
-                    await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
-
-
+                video_info = await check_video(message.message, local_video_in_file_path, local_video_out_file_path, 60)
         except Exception as e:
             pass
 

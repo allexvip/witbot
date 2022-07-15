@@ -115,10 +115,10 @@ To get a local copy up and running follow these simple example steps.
 
 Run the file: 
 ```sh
-   python run_bot.py
+   python run_client.py
    ```
 ```sh
-   python run_client.py
+   python run_bot.py
    ```
 For more examples, please refer to the [Documentation](https://github.com/allexvip/witbot)
 

@@ -15,6 +15,7 @@ from telethon.sync import TelegramClient, events
 from telethon.tl.types import InputMessagesFilterVideo
 from dotenv import dotenv_values
 import json
+from datetime import datetime
 import time
 from moviepy.editor import *
 
@@ -103,7 +104,7 @@ def check_video(chatid, local_video_in_file_path, local_video_out_file_path, sec
     result['duration'] = 0
     try:
         video = VideoFileClip(local_video_in_file_path)
-        result['duration'] = float(video.duration)
+        result['duration'] = int(video.duration)
         # sec_end = float(sec_end)
         # if result['duration'] > sec_end:
         #     video = video.subclip(0, sec_end)
@@ -204,13 +205,9 @@ async def make_call(message):
     answ_call = await send_call(phone_number, numbers_str)
 
     if answ_call['status']:
-        msg_str = """На Ваш номер <b>{0}</b>\n<b>{2}</b> Московского времени был отправлен звонок. 
-    \n‼️Обязательно <i>скажите и покажите цифры</i> <b>{1}</b> пальцами вначале видео. 
-    \n\nИз-за ограничений на размер видео для ботов - присылайте ваше видео пользователю @ruvips""".format(
-            phone_number,
-            answ_call['message'],
-            answ_call['time_sent'],
-        )
+        msg_str = f"""На Ваш номер <b>{phone_number}</b>\n<b>{answ_call['time_sent']}</b> Московского времени был отправлен звонок.
+        \n<i>Обязательно поднимите трубку</i> от номера <b>+7-xxx-xxx-{answ_call['message']}</b>.
+    \n‼️Обязательно <i>скажите и покажите цифры</i> <b>{answ_call['message']}</b> пальцами вначале видео."""
 
         await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
         await bot.send_message(service_chatid, f"🟢 Info {phone_number}:\n\n{str(answ_call)}")
@@ -221,7 +218,7 @@ async def make_call(message):
     await log_db_add(message.from_user.id, f'{msg_str}')
 
 
-@dp.message_handler(commands=['start'])
+@dp.message_handler(state='*', commands=['start'])
 async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
@@ -257,7 +254,7 @@ async def send_help(message: types.Message):
     await message.answer("Я помогу записать видео и подписать его цифровой подписью.\n\n Жмите 👉 /new")
 
 
-@dp.message_handler(commands=['new'])
+@dp.message_handler(state='*', commands=['new'])
 async def send_new(message: types.Message):
     """
     new command
@@ -303,43 +300,54 @@ async def download_video(message: types.Message):
     api_id = config['CLIENT_API_ID']
     api_hash = config['CLIENT_API_HASH']
     username = config['CLIENT_USERNAME']
-    async with TelegramClient('name', api_id, api_hash) as client:
-        @client.on(events.NewMessage(int(config['BOT_CHATID'])))
-        async def handler(event):
-            client_message = event.message
-            # print(event)
-            # print(client_message)
-            # print(client_message.media)
-            media_file_datetime_str = str(client_message.date).replace('+00:00', '').replace(':', '_').replace(' ', '_')
-            file_path = f"video/{client_message.message}_{media_file_datetime_str}"
-            try:
-                if client_message.media != 'None':
-                    local_video_in_file_path = await client.download_media(client_message, file=file_path,
-                                                                           progress_callback=download_callback)
+    # async with TelegramClient('name', api_id, api_hash) as client:
+    #     @client.on(events.NewMessage(int(config['BOT_CHATID'])))
+    #     async def handler(event):
+    #         client_message = event.message
+    #         # print(event)
+    #         # print(client_message)
+    #         # print(client_message.media)
+    #         media_file_datetime_str = str(client_message.date).replace('+00:00', '').replace(':', '_').replace(' ', '_')
+    #         file_path = f"video/{client_message.message}_{media_file_datetime_str}"
+    #         try:
+    #             if client_message.media != 'None':
+    #                 start_time = datetime.now()
+    #                 local_video_in_file_path = await client.download_media(client_message, file=file_path,
+    #                                                                        progress_callback=download_callback)
+    #                 print(local_video_in_file_path)
+    #                 local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
+    #                 video_info = check_video(client_message.message, local_video_in_file_path,
+    #                                          local_video_out_file_path,
+    #                                          60)
+    #                 print(video_info)
+    #                 if video_info['status']:
+    #                     await user_message.edit_text(text=f'Готово! Обработано за {(datetime.now() - start_time)} сек.')
+    #                     await bot.send_video(message.from_user.id,
+    #                                          caption=f"Данный видеофайл подписан цифровой подписью (продолжительность: {video_info['duration']}) сек.",
+    #                                          video=message.video.file_id)
+    #
+    #         except Exception as e:
+    #             print(e)
+    #         finally:
+    #             client_working_status = False
+    #
+    #     # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
 
-                    # print(local_video_in_file_path)
-                    local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
-                    video_info = check_video(client_message.message, local_video_in_file_path,
-                                             local_video_out_file_path,
-                                             60)
-                    # print(video_info)
-                    if video_info['status']:
-                        await user_message.edit_text(text='Готово!')
-                        await bot.send_video(message.from_user.id,
-                                             caption=f"Данный видеофайл подписан цифровой подписью (продолжительность: {video_info['duration']}) сек.",
-                                             video=message.video.file_id)
+    user_message = await message.reply(
+        f'Обработка видеофайла. Это может занять продолжительное время. Я напишу, как будет готово.')
 
-            except Exception as e:
-                pass
-            finally:
-                client_working_status = False
-
-        # await bot.forward_message('1982252518',message.from_user.id,message.message_id)
-        await bot.send_video(config['CLIENT_CHAT_ID'], caption=message.from_user.id, video=message.video.file_id)
-        user_message = await message.answer(
-            'Обработка видеофайла. Это может занять продолжительное время. Я напишу, как будет готово.')
-        if client_working_status:
-            await client.run_until_disconnected()
+    caption_str = str(
+        {
+            'chatid': message.from_user.id,
+            'message_id': user_message.message_id,
+            'message_video_file_id':message.video.file_id,
+        }
+    )
+    await bot.send_video(config['CLIENT_CHAT_ID'], caption=caption_str, video=message.video.file_id)
+    # user_message = await message.answer(
+    #     'Обработка видеофайла. Это может занять продолжительное время. Я напишу, как будет готово.')
+    # if client_working_status:
+    #     await client.run_until_disconnected()
 
     # file_id = message.video.file_id  # Get file id
     # file = await bot.get_file(file_id)  # Get file path
@@ -359,6 +367,22 @@ async def download_video(message: types.Message):
     # else:
     #     await bot.send_message(service_chatid, video_info['error'])
     #     await log_db_add(log_db_addmessage.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
+
+
+@dp.message_handler()
+async def send_forward(message: types.Message):
+    """
+    forwarder bot to user
+    """
+    # await log_db_add(message.from_user.id, message.text)
+    if message.from_user.id == int(config['CLIENT_CHAT_ID']):
+        client_user_info = eval(message.text)
+        await bot.edit_message_text(chat_id=int(client_user_info['chatid']),
+                                    message_id=int(client_user_info['message_id']), text=client_user_info['text'])
+        if 'Готово!' in client_user_info['text']:
+            await bot.send_video(int(client_user_info['chatid']),
+                                 caption=f"Данный видеофайл подписан цифровой подписью.",
+                                 video=client_user_info[message.video.file_id])
 
 
 if __name__ == '__main__':
