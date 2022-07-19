@@ -65,8 +65,11 @@ with TelegramClient('name', api_id, api_hash) as client:
                 video_info = await check_video(bot_user_info['chatid'], local_video_in_file_path, local_video_out_file_path,
                                                60)
                 if video_info['status']:
-                    bot_user_info['text'] = f'Готово! Обработано за {(datetime.now() - start_time)} сек.'
+                    bot_user_info['text'] = f'Готово! Обработано за  сек.'
                     await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
+                else:
+                    await client.send_message(int(config['BOT_CHATID']), video_info['error'])
+                    #await log_db_add(log_db_addmessage.from_user.id, f'Ошибка анализа видео от пользователя {video_info["error"]}')
 
 
         except Exception as e:

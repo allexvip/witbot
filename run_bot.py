@@ -335,7 +335,7 @@ async def download_video(message: types.Message):
 
     user_message = await message.reply(
         f'Обработка видеофайла. Это может занять продолжительное время. Я напишу, как будет готово.')
-
+    print(message.video)
     caption_str = str(
         {
             'chatid': message.from_user.id,
