@@ -206,8 +206,8 @@ async def make_call(message):
 
     if answ_call['status']:
         msg_str = f"""На Ваш номер <b>{phone_number}</b>\n<b>{answ_call['time_sent']}</b> Московского времени был отправлен звонок.
-        \n<i>Обязательно поднимите трубку</i> от номера <b>+7-xxx-xxx-{answ_call['message']}</b>.
-    \n‼️Обязательно <i>скажите и покажите цифры</i> <b>{answ_call['message']}</b> пальцами вначале видео."""
+        \n‼️<i>Обязательно поднимите трубку</i> от номера <b>+7-xxx-xxx-{answ_call['message']}</b>.
+    \n‼️Обязательно <i>скажите и покажите цифры</i> <b>{answ_call['message']}</b> пальцами на первой минуте видео."""
 
         await message.answer(msg_str, parse_mode=types.ParseMode.HTML, reply_markup=markup_remove)
         await bot.send_message(service_chatid, f"🟢 Info {phone_number}:\n\n{str(answ_call)}")
