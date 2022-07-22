@@ -61,13 +61,14 @@ with TelegramClient('name', api_id, api_hash) as client:
             if message.media != 'None':
                 local_video_in_file_path = await client.download_media(message, file=file_path,
                                                                        progress_callback=download_callback)
+                bot_user_info['local_video_out_file_path'] = local_video_out_file_path
+                bot_user_info['text'] = f'Готово! Обработано за  сек.'
                 print(local_video_in_file_path)
                 local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
                 start_time = datetime.now()
                 video_info = await check_video(bot_user_info['chatid'], local_video_in_file_path, local_video_out_file_path,
                                                60)
-                bot_user_info['local_video_out_file_path'] = local_video_out_file_path
-                bot_user_info['text'] = f'Готово! Обработано за  сек.'
+
                 await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
                 if video_info['status']:
                     bot_user_info['text'] = f'Готово! Обработано за  сек.'
