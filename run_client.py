@@ -59,7 +59,7 @@ with TelegramClient('name', api_id, api_hash) as client:
         file_path = f"video/{bot_user_info['chatid']}_{media_file_datetime_str}"
         try:
             if message.media != 'None':
-                start_time = datetime.now()
+
                 local_video_in_file_path = await client.download_media(message, file=file_path,
                                                                        progress_callback=download_callback)
                 #await asyncio.sleep(int(config['CLIENT_PROCESSING_NOTIFY_PERIOD_SEC'])+3)
@@ -68,7 +68,7 @@ with TelegramClient('name', api_id, api_hash) as client:
                 await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
                 print(local_video_in_file_path)
                 # local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
-                #
+                # start_time = datetime.now()
                 # video_info = await check_video(bot_user_info['chatid'], local_video_in_file_path, local_video_out_file_path,
                 #                                60)
                 #
