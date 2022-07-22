@@ -66,8 +66,9 @@ with TelegramClient('name', api_id, api_hash) as client:
                 start_time = datetime.now()
                 video_info = await check_video(bot_user_info['chatid'], local_video_in_file_path, local_video_out_file_path,
                                                60)
-                os.system(
-                    f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach '{local_video_in_file_path}' '{local_video_in_file_path}.sig'")
+                bot_user_info['local_video_out_file_path'] = local_video_out_file_path
+                bot_user_info['text'] = f'Готово! Обработано за  сек.'
+                await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
                 if video_info['status']:
                     bot_user_info['text'] = f'Готово! Обработано за  сек.'
 
