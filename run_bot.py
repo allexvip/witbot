@@ -380,13 +380,14 @@ async def send_forward(message: types.Message):
         await bot.edit_message_text(chat_id=int(client_user_info['chatid']),
                                     message_id=int(client_user_info['message_id']), text=client_user_info['text'])
         if 'Готово!' in client_user_info['text']:
-            if os.system(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach '/{client_user_info['local_video_in_file_path']}' '/{client_user_info['local_video_in_file_path']}.sig'"):
-                await bot.send_video(int(client_user_info['chatid']),
-                                     caption=f"Готовим цифровую подпись к этому видео.",
-                                     video=client_user_info[message.video.file_id])
-                await bot.send_document(int(client_user_info['chatid']), open(f"{client_user_info['local_video_in_file_path']}.sig", 'rb'),
-                caption = f"Цифровая подпись к видео",
-                )
+            print(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach '/{client_user_info['local_video_in_file_path']}' '/{client_user_info['local_video_in_file_path']}.sig'")
+            os.system(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach '/{client_user_info['local_video_in_file_path']}' '/{client_user_info['local_video_in_file_path']}.sig'")
+            await bot.send_video(int(client_user_info['chatid']),
+                                 caption=f"Готовим цифровую подпись к этому видео.",
+                                 video=client_user_info[message.video.file_id])
+            await bot.send_document(int(client_user_info['chatid']), open(f"{client_user_info['local_video_in_file_path']}.sig", 'rb'),
+            caption = f"Цифровая подпись к видео",
+            )
 
 
 
