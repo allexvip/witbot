@@ -64,7 +64,7 @@ with TelegramClient('name', api_id, api_hash) as client:
                                                                        progress_callback=download_callback)
                 #await asyncio.sleep(int(config['CLIENT_PROCESSING_NOTIFY_PERIOD_SEC'])+3)
                 bot_user_info['local_video_in_file_path'] = local_video_in_file_path
-                bot_user_info['text'] = f'Готово! Обработано за {str(datetime.now()-start_time)} сек.'
+                bot_user_info['text'] = f'Готово! '
                 await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
                 print(local_video_in_file_path)
                 # local_video_out_file_path = local_video_in_file_path.replace('.mp4', '_out.mp4')
