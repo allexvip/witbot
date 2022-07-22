@@ -1,3 +1,5 @@
+import os
+
 from dotenv import dotenv_values
 import logging
 from telethon.sync import TelegramClient, events
@@ -66,6 +68,7 @@ with TelegramClient('name', api_id, api_hash) as client:
                                                60)
                 if video_info['status']:
                     bot_user_info['text'] = f'Готово! Обработано за  сек.'
+                    os.system(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach '{local_video_in_file_path}' '{local_video_in_file_path}.sig'")
                     await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
                 else:
                     await client.send_message(int(config['BOT_CHATID']), video_info['error'])
