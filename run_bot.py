@@ -381,7 +381,7 @@ async def send_forward(message: types.Message):
                                     message_id=int(client_user_info['message_id']), text=client_user_info['text'])
         if 'Готово!' in client_user_info['text']:
             sig_file_path = client_user_info['local_video_in_file_path'].replace(".mp4",".sig")
-            print(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach './{client_user_info['local_video_in_file_path']}' './{}.sig'")
+            print(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach './{client_user_info['local_video_in_file_path']}' './{sig_file_path}'")
             os.system(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach './{client_user_info['local_video_in_file_path']}' './{sig_file_path}'")
             await bot.send_video(int(client_user_info['chatid']),
                                  caption=f"К данному видео подготовлена цифровая подпись",
