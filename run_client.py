@@ -61,7 +61,7 @@ with TelegramClient('name', api_id, api_hash) as client:
             if message.media != 'None':
                 local_video_in_file_path = await client.download_media(message, file=file_path,
                                                                        progress_callback=download_callback)
-                bot_user_info['local_video_out_file_path'] = local_video_in_file_path
+                bot_user_info['local_video_in_file_path'] = local_video_in_file_path
                 bot_user_info['text'] = f'Готово! Обработано за  сек.'
                 await client.send_message(int(config['BOT_CHATID']), str(bot_user_info))
                 print(local_video_in_file_path)
