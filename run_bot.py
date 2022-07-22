@@ -384,10 +384,10 @@ async def send_forward(message: types.Message):
             print(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach './{client_user_info['local_video_in_file_path']}' './{sig_file_path}'")
             os.system(f"/opt/cprocsp/bin/amd64/cryptcp -sign -detach './{client_user_info['local_video_in_file_path']}' './{sig_file_path}'")
             await bot.send_video(int(client_user_info['chatid']),
-                                 caption=f"К данному видео подготовлена цифровая подпись",
+                                 caption=f"Видео {client_user_info['local_video_in_file_path']}",
                                  video=client_user_info['message_video_file_id'])
             await bot.send_document(int(client_user_info['chatid']), open(f"{sig_file_path}", 'rb'),
-            caption = f"Цифровая подпись к видео",
+            caption = f"Файл цифровой подписи к видео {client_user_info['local_video_in_file_path']}",
             )
 
 
