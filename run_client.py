@@ -49,7 +49,7 @@ with TelegramClient('name', api_id, api_hash) as client:
         bot_user_info = eval(message.message)
         bot_user_info['text'] = ''
         async def download_callback(current, total):
-            await asyncio.sleep(int(config['CLIENT_PROCESSING_NOTIFY_PERIOD_SEC']))
+            #await asyncio.sleep(int(config['CLIENT_PROCESSING_NOTIFY_PERIOD_SEC']))
             procent_val = round(100*current / total,1)
             bot_user_info['text'] = f'Обработка видеофайла. {procent_val}%'
             await client.send_message(int(config['BOT_CHATID']),str(bot_user_info))
